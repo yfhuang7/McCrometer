@@ -11,9 +11,9 @@ These script works on **Linux system** with its *crontab*
 
 For the "auto" part, you will need:
 * To install *expect* tool along with *bash shell* to passthrough the requirement of username and password. (you might able to skip this if you know how to use SSH key, but I didn't try the key here.)
-    {% codeblock %}
+    ```
     apt-get install expect
-    {% endcodeblock %}
+    ```
 * Use *crontab -e* to set the time interval you want for executing your scripts. [crontab guru](https://crontab.guru/) is a quick and simple editor for cron schedule expressions by [Cronitor](https://cronitor.io/?utm_source=crontabguru&utm_campaign=cronitor_top)
 
 For the visualization/R part, you will need:
@@ -44,6 +44,8 @@ For the visualization/R part, you will need:
 **McCrometer_Visualization.Rmd**  Visualize nearly real-time gage data, and convert it into .html file.
 **Site_Info.csv**  Site information, especially location for the mapping in *McCrometer_Visualization.Rmd*
 
+### Example website
+[TsangStreamLab Data](https://tsangstreamlab.github.io/)
 
 ### Note (pros and cons)
 Pros:
