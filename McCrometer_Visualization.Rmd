@@ -1,0 +1,368 @@
+---
+title: "TsangStreamLab Data"
+author: "Yu-Fen Huang"
+date: "`r format(Sys.time(), '%d %B, %Y  %H:%M')`"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+
+```{r EnvironmentSetting, results='hide', include=FALSE}
+### Environment Setting ---------------------------------
+
+rm(list= ls(all = T))
+ls(all = T)
+
+# Working directory
+setwd("/home/yfhuang/Documents/")
+# setwd("C:/Users/Yu-Fen Huang/Dropbox/Cooperation/Tsang_Yinphan/TsangStreamLab")
+dir.data <- './Data/'
+dir.fig <- './Figure/'
+dir.result <- './Result/'
+
+# Library
+library(ggplot2)
+library(gridExtra)
+library(lubridate)
+library(leaflet)
+
+# Conversion
+m2ft<-3.28084
+cms2cfs<-35.3146662127
+in2mm <- 25.4
+
+station <- c(
+  "Poamoho",
+  "Lyon",
+  "Weather_Lyon"
+)
+```
+
+# Intro
+TsangStreamLab is built for vidualizing the stream and rainfall data that set up by [Tsang Hydrology Lab](https://yinphantsang.org/) in [the Department of Natural Resources and Environmental Management, Univerisyt of Hawaii at Manoa](https://cms.ctahr.hawaii.edu/nrem/).  The McCrometer stations are funded by [UH-CTAHR](https://cms.ctahr.hawaii.edu/). 
+\ 
+*Note: We're still working on letting user download data from this website, but plese [contact us](tsangy@hawaii.edu) for the data for now. Mahalo for your patient!*
+*Note: please be awared that the data showing here did not have quality control yet*
+
+# TsangStreamLab Map
+
+```{r Map}
+### read site info
+site_info <- read.csv("./Site_Info.csv",stringsAsFactors = F, header = T)
+
+## assign color
+getColor <- function(site_info) {
+  sapply(site_info$Type, function(Type) {
+    if(Type == "sw/rf") {
+      "green"
+    } else if(Type == "sw/wq/rf") {
+      "purple"
+    } else if(Type == "atmo") {
+      "blue"
+    } else {
+      "grey"
+    } })
+}
+
+marker <- getColor(site_info)
+attributes(marker) <- NULL
+
+icons <- awesomeIcons(
+  icon = 'home',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = marker
+)
+
+### Basemap for Oahu 
+leaflet(site_info) %>% 
+  setView(lng = -158.0, lat = 21.46, zoom = 10) %>% 
+  addProviderTiles(providers$Esri.NatGeoWorldMap) %>% 
+  addAwesomeMarkers(~Lon, ~Lat, icon=icons, label=~as.character(Site_name),
+                    clusterOptions = markerClusterOptions())
+```
+
+  
+\ 
+\ 
+\ 
+
+
+# Live Streamming Data
+```{r ReadData}
+
+# McCrometer
+i=1
+idata.1 <- read.csv(paste(dir.result,"McCrometer_",station[i],".csv",sep = ""),
+                    stringsAsFactors = F)
+idata.1$Time <- as.POSIXct(idata.1$Time)
+date.max <- max(idata.1$Time)
+idata.show.1 <- idata.1[(nrow(idata.1)-500):nrow(idata.1),]
+ 
+i=2
+idata.2 <- read.csv(paste(dir.result,"McCrometer_",station[i],".csv",sep = ""),
+                    stringsAsFactors = F)
+idata.2$Time <- as.POSIXct(idata.2$Time)
+date.max <- max(idata.2$Time)
+idata.show.2 <- idata.2[(nrow(idata.2)-500):nrow(idata.2),]
+
+i =3
+variable = c("TIMESTAMP","RECORD","SWup_Avg","SWdn_Avg","LWup_Avg","LWdn_Avg","Trnet_Avg","Tair_1_Avg","RH_1_Avg","Tair_2_Avg","RH_2_Avg","WindSpeed","WindSpeed_rs","WindDir","WindDir_sd","WindDir_uv","Tsoil_Avg","SoilHeatFlux_Avg(1)","SoilHeatFlux_Avg(2)","SoilMoisture_Avg(1)","SoilMoisture_Avg(2)","SoilMoisture_Avg(3)","SM_us_Avg(1)","SM_us_Avg(2)","SM_us_Avg(3)","SoilMoisture_T_Avg","Rainfall_Tot")
+idata.3 <- read.table(paste(dir.result,"CR3000_Lyon_MetData.dat",sep = ""), sep = ",", col.names = variable, skip = 4)
+idata.3$TIMESTAMP <- as.POSIXct(idata.3$TIMESTAMP)
+date.max <- max(idata.3$TIMESTAMP)
+idata.show.3 <- idata.3[(nrow(idata.3)-500):nrow(idata.3),]
+```
+\ 
+
+  
+## Poamoho 
+Poamoho stream is located in the central Oahu, from the top of Koolau Ridge flows into Tanada Reservoir. We appriciate [DOFAW](http://dlnr.hawaii.gov/dofaw/) that they support us to monitor the Poamoho stream.
+\ 
+
+### [Stream] Poamoho Stream
+Poamoho stream gage has been built in March, 2018. Stream stage and rainfall is measured in this site by using [McCrometer mini field station](https://www.mccrometer.com/asset-get.download.jsa?id=52003822855) with Iradium satellite telemetry. 
+\ 
+
+```{r Plot_McCrometer_Poamoho}
+# plot(idata.show.1$Time, idata.show.1$Level_mm)
+# 
+# ggplot(idata.show.1, aes(x=Time)) +
+#   geom_point(aes(y=Level_mm))+
+#     geom_step(aes(y=Rainfall_mm))
+
+i=1
+### https://rpubs.com/cxiao/hydrograph-ggplot2-plot ==================
+
+# Calculate the maxima to adjust the graph
+maxSF   <- max(idata.show.1$Level_mm, na.rm = T)
+maxPR   <- max(idata.show.1$Rainfall_mm, na.rm = T)
+
+stage <- ggplot(idata.show.1, aes(x = Time, y = Level_mm, col = 1)) +
+  geom_line(size = 2) + geom_point(size = 2) +
+  scale_y_continuous(limits = c(0, 1.3*maxSF)) +
+  labs(x = "", y = "Stream stage (m)") +
+  theme(axis.title = element_text(size = 12),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
+
+rainfall <- ggplot(idata.show.1, aes(x = Time, y = Rainfall_mm, col = "grey")) +
+  geom_step(size = 2) +
+  scale_y_continuous(limits = c(0, 1.5*maxSF)) +
+  labs(x = "", y = "Rainfall (mm)") +
+  scale_y_reverse() +
+  theme(axis.title = element_text(size = 12),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank()
+        )
+
+battery <- ggplot(idata.show.1, aes(x = Time, y = Battery_vott)) +
+  geom_line() +
+  labs(x = "", y = "bettary (V)") +
+  theme(axis.title = element_text(size = 12),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
+
+grid.arrange(
+  rainfall, stage, battery,
+  heights = c(2.5, 5, 2),
+  layout_matrix = cbind(c(1, 2, 3))
+)
+# # maxPR   <- max(idata.show.1$Rainfall_mm, na.rm = T)
+# par(mar = c(8.5, 4, 3, 4) + 0.1)
+# plot(idata.show.1$Time, idata.show.1$Level_mm,
+#      type = 'o', col = "red",
+#      ylim = c(0, 1.3 * maxSF),
+#      xaxs = "i", yaxs = "i",
+#      xaxt = "n",
+#      xlab = NA, ylab = "Stream stage (m)",
+#      main = paste0("Hydrograph", " @ ", station[i]), cex.main = 0.9)
+# axis.POSIXct(1, at=idata.show.1$Time[seq(1,nrow(idata.show.1),10)], format = "%Y-%m-%d %H:%H",las = 2, cex.axis = 0.8)
+# 
+# par(new = TRUE)
+# plot(idata.show.1$Time, idata.show.1$Rainfall_mm,
+#      type = 'n', ylim = c(0, 5 * maxPR),
+#      xaxs = "i", yaxs = "i",
+#      axes = FALSE, xlab = "", ylab = "")
+# segments(x0 = idata.show.1$Time, y0 = rep(0,nrow(idata.show.1)),
+#          x1 = idata.show.1$Time, y1 =idata.show.1$Rainfall_mm,
+#          lend = 2, lwd = 5)
+#          
+# yrAxis <- seq(0, ceiling(maxPR), length.out = 6)
+# axis(4, at = yrAxis, labels = paste0(yrAxis))
+# mtext("Rainfall (mm)", side = 4, line =2, adj = 1)
+
+
+
+
+```
+
+
+        
+\ 
+\ 
+\ 
+\ 
+
+## Lyon Arboretum
+[Lyon Arboretum](https://manoa.hawaii.edu/lyonarboretum/) is located in Manoa Valley. The stream, Aihualama, flows through Lyon Arboretum. Aihualama is the first order stream (head stream), and it's the upstream of Manoa stream that flows into Ala Wai Canal. Besides, the coverage here is mostly forest that is an appropriate place to understand the hydrology in a natural watershed. We really appriciate Lyon Arboretum providing their place for us to setting up some real-time stream and weather stations.
+\ 
+
+### [Stream] Lyon Aihualama Stream above Diversion
+This stream gage has been built in March 2018. Stream stage and rainfall is measured in this site by using [McCrometer mini field station](https://www.mccrometer.com/asset-get.download.jsa?id=52003822855) with Iradium satellite telemetry. 
+
+```{r Plot_McCrometer_Lyon}
+i=2
+### https://rpubs.com/cxiao/hydrograph-ggplot2-plot ==================
+maxSF   <- max(idata.show.2$Level_mm, na.rm = T)
+maxPR   <- max(idata.show.2$Rainfall_mm, na.rm = T)
+
+stage <- ggplot(idata.show.2, aes(x = Time, y = Level_mm, col = 1)) +
+  geom_line(size = 2) + geom_point(size = 2) +
+  ylim(0, 1.3*maxSF) +
+  labs(x = "", y = "Stream stage (m)") +
+  theme(axis.title = element_text(size = 12),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
+
+rainfall <- ggplot(idata.show.2, aes(x = Time, y = Rainfall_mm, col = "grey")) +
+  geom_step(size = 2) +
+  ylim(1, 3*maxPR) +
+  labs(x = "", y = "Rainfall (mm)") +
+  scale_y_reverse() +
+  theme(axis.title = element_text(size = 12),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank()
+        )
+
+battery <- ggplot(idata.show.2, aes(x = Time, y = Battery_vott)) +
+  geom_line() +
+  labs(x = "", y = "bettary (V)") +
+  theme(axis.title = element_text(size = 12),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
+
+grid.arrange(
+  rainfall, stage, battery,
+  heights = c(2.5, 5, 2),
+  layout_matrix = cbind(c(1, 2, 3))
+)
+# par(mar = c(4, 4, 3, 4) + 0.1)
+# plot(idata.show.2$Time, idata.show.2$Level_mm,
+#      type = 'p', col = "red",
+#      ylim = c(0, 1.3 * maxSF),
+#      xaxs = "i", yaxs = "i",
+#      xlab = "Time", ylab = "Stage (m)",
+#      main = paste0("Stream Stage", " @ ", station[i]), cex.main = 0.9)
+
+
+# par(mar = c(4, 4, 3, 4) + 0.1)
+# plot(idata.show.2$Time, idata.show.2$Rainfall_mm,
+#      type = 'h', col = "blue",
+#      ylim = c(0, 1.3 * maxPR),
+#      xaxs = "i", yaxs = "i",
+#      xlab = "Time", ylab = "Rainfall (mm)",
+#      main = paste0("Precipitation", " @ ", station[i]), cex.main = 0.9)
+
+```
+
+
+\ 
+
+### [Stream] Lyon Aihualama Stream below Diversion
+This site started running from October 2016 till now (but there are some issues going on since August 2018). The Data of Aihualama stream below diversion is at [Intelesense Technology](https://www.intelesense.net/data/intelecell/0000001100060005/t:water). This site includes water stage, water quality (temperature, disolved oxygen, ORP, pH, and conductivity), and rainfall. The rating curve has been built for converting water stage into streamflow. The telemetry is using radio to communicate with field logger and WiFi to send the data to Intelesense.
+
+\ 
+
+### [Weather] Lyon Weather Staion by the greenhouse
+This staion started in Febuary 2018. With Campball Scientific data logger CR3000 and their sensors. We're measuring precipitation, air temperature, solar radiation, winds, humidity, soil moisture, and soil temperature.) 
+
+```{r weather_lyon}
+
+# Calculate the maxima to adjust the graph
+maxPR   <- max(idata.show.3$Rainfall_Tot, na.rm = T)
+rainfall <- ggplot(idata.show.3, aes(x = TIMESTAMP, y = Rainfall_Tot)) +
+  geom_col(size = 1) +
+  scale_y_continuous(limits = c(0, 1.5*maxSF)) +
+  labs(x = "", y = "Rainfall (mm)") +
+  theme(axis.title = element_text(size = 8),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank())
+
+temperature <- ggplot(idata.show.3, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Tair_1_Avg, col = "red")) +
+  geom_line(aes(y = Tair_2_Avg, col = "blue")) +
+  labs(x = "", y = "Temperature (C)") +
+  theme(axis.title = element_text(size = 8),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank())
+
+humidity <- ggplot(idata.show.3, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = RH_1_Avg, col = "red")) +
+  geom_line(aes(y = RH_2_Avg, col = "blue")) +
+  labs(x = "", y = "Humidity (%)") +
+  theme(axis.title = element_text(size = 8),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank())
+
+wind.speed <- ggplot(idata.show.3, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = WindSpeed)) +
+  labs(x = "", y = "Wind speed (m/s)") +
+  theme(axis.title = element_text(size = 8),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank())
+
+idata.show.3$WindDirGroup[idata.show.3$WindDir<45 | idata.show.3$WindDir>=315] = "N"
+idata.show.3$WindDirGroup[idata.show.3$WindDir<135 & idata.show.3$WindDir>=45] = "E"
+idata.show.3$WindDirGroup[idata.show.3$WindDir<225 & idata.show.3$WindDir>=135] <- "S"
+idata.show.3$WindDirGroup[idata.show.3$WindDir<315 & idata.show.3$WindDir>=225] <- "W"
+idata.show.3$WindDirGroup <- as.character(idata.show.3$WindDirGroup)
+
+wind.dir <- ggplot(idata.show.3, aes(x = TIMESTAMP)) +
+  geom_point(aes(y = WindDir, col = WindDirGroup)) +
+  labs(x = "", y = "Wind direction") +
+  theme(axis.title = element_text(size = 8),
+        legend.position = "none",
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10))
+
+
+
+
+
+grid.arrange(
+  rainfall, temperature, humidity, wind.speed, wind.dir,
+  heights = c(rep(2,5)),
+  layout_matrix = cbind(c(1, 2, 3, 4, 5))
+)
+```
+
+
+

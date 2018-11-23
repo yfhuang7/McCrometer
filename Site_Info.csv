@@ -1,0 +1,5 @@
+Site_name,Site_no,Site_no_affiliate,Lat,Lon,Alt_m,Install_date,Type,Backhaul,Logger
+Poamoho Stream,,,21.5313,-157.93544,551.4,3/28/2018,sw/rf,Satcom,McCrometer
+Lyon Aihualama Stream above diversion,,,21.33517,-157.80258,183.8,3/12/2018,sw/rf,Satcom,McCrometer
+Lyon Aihualama Stream below diversion,,CRWM 3-114,21.3342,-157.802,156.1,9/19/2016,sw/wq/rf,Wifi,Intelesense
+Lyon weather station by greenhouse,,,21.33302,-157.80261,155,2/21/2018,atmo,Wifi,Campbell Scientific

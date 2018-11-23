@@ -1,0 +1,15 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+### The script you want to response ===============================
+spawn "/home/yfhuang/Documents/upload_McCrometer.sh"  
+
+### What questions do you expect and what will be the answer =================
+expect "Username for 'https://github.com':"
+send "<<USERNAME>> \r"
+expect "Password for 'https://<<USERNAME>>@github.com':"
+send "<<PASSWORD>> \r"
+
+expect eof
+exit
