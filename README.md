@@ -10,7 +10,7 @@ In this project, I am doing auto-download data from McCrometer, auto-update the 
 These script works on **Linux system** with its *crontab*
 
 For the "auto" part, you will need:
-* To install *expect* tool along with *bash shell* to passthrough the requirement of username and password. (you might able to skip this if you know how to use SSH key, but I didn't try the key here.)
+* To install *expect* tool along with *bash shell* to passthrough the requirement of username and password. (you might able to skip this if you know how to passthrough.)
     ```
     apt-get install expect
     ```
