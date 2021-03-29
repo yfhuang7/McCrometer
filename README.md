@@ -35,14 +35,14 @@ For the visualization/R part, you will need:
 **Result/**  The downloaded data
 
 ##### Shells:
-**upload_McCrometer.sh**  The shell for executing visualization/R scripts, and upload to git.
-**Git_McCrometer**  The script file for answering the username and password while uploading git
-**run_McCrometer.sh**  The shell that execute data download and upload. This shell is the one you want to schedule in the crontab
+**upload_McCrometer.sh**  The shell for executing visualization/R scripts, and upload to git.  
+**Git_McCrometer**  The script file for answering the username and password while uploading git.  
+**run_McCrometer.sh**  The shell that execute data download and upload. This shell is the one you want to schedule in the crontab.
 
 ##### Visualization/R:
-**McCrometer_Download.R**  Download nearly real-time xml file from McCrometer, also calculate the rainfall intensity from the accumulated rainfall.
-**McCrometer_Visualization.Rmd**  Visualize nearly real-time gage data, and convert it into .html file.
-**Site_Info.csv**  Site information, especially location for the mapping in *McCrometer_Visualization.Rmd*
+**McCrometer_Download.R**  Download nearly real-time xml file from McCrometer, also calculate the rainfall intensity from the accumulated rainfall.  
+**McCrometer_Visualization.Rmd**  Visualize nearly real-time gage data, and convert it into .html file.  
+**Site_Info.csv**  Site information, especially location for the mapping in *McCrometer_Visualization.Rmd*  
 
 ### Example website
 [TsangStreamLab Data](https://tsangstreamlab.github.io/)
