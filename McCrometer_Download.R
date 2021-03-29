@@ -3,7 +3,8 @@
 #
 # yfhuang@hawaii.edu  on 2018/05/29 
 #
-########################################################
+#######################################
+#################
 
 rm(list= ls(all = T))
 ls(all = T)
@@ -30,17 +31,20 @@ in2mm <- 25.4
 ### Download data ---------------------------------------
 
 station <- c(
-  "Lyon",
+#  "Lyon",
+#  "Kaluanui" 
   "Poamoho"
+
 )
 
 fileURL <- c(
-  "http://automata-inc.net/McCrometer/SensorRSS.aspx?h1=B43F3811EC0A7D607F7E654EC866167ACB42336B&feed=1522&h2=54977C6BD46EFAA5E4BDB1E3A3C470D56D919A55&dataset=1&raw=1",
+#  "http://automata-inc.net/McCrometer/SensorRSS.aspx?h1=B43F3811EC0A7D607F7E654EC866167ACB42336B&feed=1522&h2=54977C6BD46EFAA5E4BDB1E3A3C470D56D919A55&dataset=1&raw=1",
+#  "http://automata-inc.net/McCrometer/SensorRSS.aspx?h1=B43F3811EC0A7D607F7E654EC866167ACB42336B&feed=1592&h2=74D054933052AA82023FDF5175CDC1183E673846"
   "http://automata-inc.net/McCrometer/SensorRSS.aspx?h1=B43F3811EC0A7D607F7E654EC866167ACB42336B&feed=1523&h2=C265E7A09B3E2862827326C45039568BF35FCF8E&dataset=1&raw=1"
 )
 
 
-for(i in 1:2){
+for(i in 1:1){
   origin <- read.csv(paste(dir.result,"McCrometer_",station[i],".csv",sep = ""), stringsAsFactors = F)
   origin$Time <- as.POSIXct(origin$Time)
   # origin$Time <- as.POSIXct(origin$Time, format = "%m/%d/%Y %H:%M")
@@ -49,7 +53,9 @@ for(i in 1:2){
   xData.frame <- xmlToDataFrame(xData)
   
   xData.frame$sn_value <- as.numeric(as.character(xData.frame$sn_value))
-  xData.frame$sn_timestamp <- as.POSIXct(as.character(xData.frame$sn_timestamp),format = "%Y-%m-%dT%H:%M:%S-08:00", tz="UTC")
+  # Getting the right timestamp (the original somehow having the sunlight time for a half year)
+  xData.frame$sn_timestamp <- as.POSIXct(as.character(xData.frame$sn_timestamp),format = "%Y-%m-%dT%H:%M:%S",
+                                         tryFormats = c("%Y-%m-%dT%H:%M:%S-08:00", "%Y-%m-%dT%H:%M:%S-07:00"), tz="UTC")
   attributes(xData.frame$sn_timestamp)$tzone <- "Pacific/Honolulu"
   
   xData.frame.clean <- data.frame(Time = xData.frame$sn_timestamp[1], 
@@ -77,4 +83,5 @@ for(i in 1:2){
     write.csv(merge, paste(dir.result,"McCrometer_",station[i],".csv",sep = ""), 
               row.names = F)
   }
-}
+  }
+
